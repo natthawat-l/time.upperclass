@@ -157,8 +157,7 @@
 
 <div class="action-area">
   <button class="btn-main checkin" id="btn-main" onclick="submit()" disabled>
-    <span id="btn-icon">📷</span>
-    <span id="btn-label">ถ่ายรูปและระบุตำแหน่งก่อน</span>
+    ถ่ายรูปและระบุตำแหน่งก่อน
   </button>
 </div>
 
@@ -319,18 +318,19 @@ function dist(a,b,c,d){
 function checkReady(){
   const btn=document.getElementById('btn-main');
   if(!btn) return;
-  btn.innerHTML=`<span id="btn-icon"></span><span id="btn-label"></span>`;
-  const icon=document.getElementById('btn-icon');
-  const label=document.getElementById('btn-label');
   if(hasPhoto&&hasLoc){
     btn.disabled=false;
-    if(checkedIn){btn.className='btn-main checkout';icon.textContent='🔴';label.textContent='ลงเวลาออกงาน';}
-    else{btn.className='btn-main checkin';icon.textContent='🟢';label.textContent='ลงเวลาเข้างาน';}
+    if(checkedIn){
+      btn.className='btn-main checkout';
+      btn.innerHTML='🔴 ลงเวลาออกงาน';
+    } else {
+      btn.className='btn-main checkin';
+      btn.innerHTML='🟢 ลงเวลาเข้างาน';
+    }
   } else {
     btn.disabled=true;
     btn.className='btn-main checkin';
-    icon.textContent='📷';
-    label.textContent=!hasPhoto?'ถ่ายรูปก่อนลงเวลา':'รอระบุตำแหน่ง...';
+    btn.innerHTML= !hasPhoto ? '📷 ถ่ายรูปก่อนลงเวลา' : '⏳ รอระบุตำแหน่ง...';
   }
 }
 
