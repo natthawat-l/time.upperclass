@@ -366,6 +366,7 @@ async function submit(){
       badge.textContent='⏹ ออกงานแล้ว'; badge.className='status-badge out';
       document.getElementById('sum-out').textContent=t;
     }
+    saveState(type, t);
     toast(type==='checkin'?'✅ ลงเวลาเข้างานสำเร็จ!':'✅ ลงเวลาออกงานสำเร็จ!');
     addHistory(type,lat,lng);
     retake();
@@ -387,36 +388,69 @@ function addHistory(type,la,lo){
   list.appendChild(el);
 }
 
-async function loadHistory(){
-  try{
-    const url = GAS_URL + '?action=history&userId=' + encodeURIComponent(profile.userId);
-    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-    const data = await res.json();
-    if(data.records && data.records.length > 0){
-      const list=document.getElementById('history-list'); list.innerHTML='';
-      data.records.forEach(r=>{
-        const el=document.createElement('div'); el.className='history-item';
-        el.innerHTML=`<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
-          <div class="h-info"><div class="h-type">${r.type==='checkin'?'เข้างาน':'ออกงาน'}</div>
-          <div class="h-loc">📍 ${r.lat}, ${r.lng}</div></div>
-          <div class="h-time">${r.time}</div>`;
-        list.appendChild(el);
-      });
-      const last=data.records[data.records.length-1];
-      checkedIn = last.type === 'checkin';
-      if(data.checkinTime) document.getElementById('sum-in').textContent=data.checkinTime;
-      if(data.checkoutTime) document.getElementById('sum-out').textContent=data.checkoutTime;
-      if(data.totalHours) document.getElementById('sum-hrs').textContent=data.totalHours+' ชม.';
+function saveState(type, t) {
+  const today = new Date().toLocaleDateString('th-TH');
+  const state = JSON.parse(localStorage.getItem('attendance') || '{}');
+  if (state.date !== today) {
+    // วันใหม่ รีเซ็ต
+    localStorage.setItem('attendance', JSON.stringify({
+      date: today, checkin: null, checkout: null, records: []
+    }));
+  }
+  const s = JSON.parse(localStorage.getItem('attendance'));
+  if (type === 'checkin' && !s.checkin) s.checkin = t;
+  if (type === 'checkout') s.checkout = t;
+  s.records = s.records || [];
+  s.records.push({ type, time: t });
+  localStorage.setItem('attendance', JSON.stringify(s));
+}
 
-      const badge=document.getElementById('status-badge');
-      if(checkedIn){
-        badge.textContent='✅ เข้างานแล้ว'; badge.className='status-badge in';
-      } else {
-        badge.textContent='⏹ ออกงานแล้ว'; badge.className='status-badge out';
-      }
-      checkReady();
-    }
-  } catch(e){ console.log('history error:',e); }
+function loadHistory(){
+  const today = new Date().toLocaleDateString('th-TH');
+  const state = JSON.parse(localStorage.getItem('attendance') || '{}');
+
+  // ถ้าไม่ใช่วันนี้ รีเซ็ตหมด
+  if (state.date !== today) {
+    localStorage.setItem('attendance', JSON.stringify({
+      date: today, checkin: null, checkout: null, records: []
+    }));
+    return;
+  }
+
+  const records = state.records || [];
+  if (records.length === 0) return;
+
+  // แสดงประวัติ
+  const list = document.getElementById('history-list');
+  list.innerHTML = '';
+  records.forEach(r => {
+    const el = document.createElement('div'); el.className = 'history-item';
+    el.innerHTML = `<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
+      <div class="h-info"><div class="h-type">${r.type==='checkin'?'เข้างาน':'ออกงาน'}</div></div>
+      <div class="h-time">${r.time}</div>`;
+    list.appendChild(el);
+  });
+
+  // อัปเดต summary
+  if (state.checkin)  document.getElementById('sum-in').textContent  = state.checkin;
+  if (state.checkout) document.getElementById('sum-out').textContent = state.checkout;
+  if (state.checkin && state.checkout) {
+    const [h1,m1] = state.checkin.split(':').map(Number);
+    const [h2,m2] = state.checkout.split(':').map(Number);
+    const hrs = ((h2*60+m2 - h1*60-m1)/60).toFixed(1);
+    document.getElementById('sum-hrs').textContent = hrs + ' ชม.';
+  }
+
+  // เช็คสถานะล่าสุด
+  const last = records[records.length - 1];
+  checkedIn = last.type === 'checkin';
+  const badge = document.getElementById('status-badge');
+  if (checkedIn) {
+    badge.textContent = '✅ เข้างานแล้ว'; badge.className = 'status-badge in';
+  } else {
+    badge.textContent = '⏹ ออกงานแล้ว'; badge.className = 'status-badge out';
+  }
+  checkReady();
 }
 
 function toast(msg){
