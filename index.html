@@ -173,7 +173,7 @@
 <script>
 // ===== CONFIG =====
 const LIFF_ID = '2010117967-QjNoEycw';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby40CemTEiVEOc0BVbehzoE0loesl7cdn2xZoCFtTk6ajaIxnQVNpwwYzGwpExKY1srYA/exec'; // ← วาง Web App URL หลัง Deploy
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyj9V1B_syCtDftStPll2w9FUIJrwTq6i8D4R95KoBdt1x0gd5E__6NBMYVr2nz8Tl_6g/exec'; // ← วาง Web App URL หลัง Deploy
 
 const OFFICES = [
   { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702, lng:100.556688,  radius:200 },
@@ -389,9 +389,10 @@ function addHistory(type,la,lo){
 
 async function loadHistory(){
   try{
-    const res=await fetch(`${GAS_URL}?action=history&userId=${profile.userId}`);
-    const data=await res.json();
-    if(data.records&&data.records.length>0){
+    const url = GAS_URL + '?action=history&userId=' + encodeURIComponent(profile.userId);
+    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const data = await res.json();
+    if(data.records && data.records.length > 0){
       const list=document.getElementById('history-list'); list.innerHTML='';
       data.records.forEach(r=>{
         const el=document.createElement('div'); el.className='history-item';
@@ -402,13 +403,20 @@ async function loadHistory(){
         list.appendChild(el);
       });
       const last=data.records[data.records.length-1];
-      checkedIn=last.type==='checkin';
+      checkedIn = last.type === 'checkin';
       if(data.checkinTime) document.getElementById('sum-in').textContent=data.checkinTime;
       if(data.checkoutTime) document.getElementById('sum-out').textContent=data.checkoutTime;
       if(data.totalHours) document.getElementById('sum-hrs').textContent=data.totalHours+' ชม.';
+
+      const badge=document.getElementById('status-badge');
+      if(checkedIn){
+        badge.textContent='✅ เข้างานแล้ว'; badge.className='status-badge in';
+      } else {
+        badge.textContent='⏹ ออกงานแล้ว'; badge.className='status-badge out';
+      }
       checkReady();
     }
-  }catch(e){}
+  } catch(e){ console.log('history error:',e); }
 }
 
 function toast(msg){
