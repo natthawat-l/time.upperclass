@@ -173,13 +173,13 @@
 <script>
 // ===== CONFIG =====
 const LIFF_ID = '2010117967-QjNoEycw';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyj9V1B_syCtDftStPll2w9FUIJrwTq6i8D4R95KoBdt1x0gd5E__6NBMYVr2nz8Tl_6g/exec'; // ← วาง Web App URL หลัง Deploy
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby_SlF7bWsXiN2zg6DGp_LyA6wGS-Z-VCZ3DEFQAN-X1T7J9aBBbIep9EJg7ncOsCB7qQ/exec'; // ← วาง Web App URL หลัง Deploy
 
 const OFFICES = [
   { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702, lng:100.556688,  radius:200 },
   { id:'vana_wv17', name:'VANA WV17',      lat:13.8049706, lng:100.4424956, radius:200 },
   { id:'cinquieme', name:'CINQUIEME KK10', lat:13.7597684, lng:100.6694346, radius:200 },
-  { id: 'Armtest', name: 'Arm Test', lat: 13.818153933830375, lng: 100.33551262760439, radius: 500 },
+  { id: 'Armtest', name: 'Arm Test', lat: 13.818153933830375, lng: 100.33551262760439, radius: 500 },  
 ];
 // ==================
 
@@ -366,7 +366,6 @@ async function submit(){
       badge.textContent='⏹ ออกงานแล้ว'; badge.className='status-badge out';
       document.getElementById('sum-out').textContent=t;
     }
-    saveState(type, t);
     toast(type==='checkin'?'✅ ลงเวลาเข้างานสำเร็จ!':'✅ ลงเวลาออกงานสำเร็จ!');
     addHistory(type,lat,lng);
     retake();
@@ -406,51 +405,45 @@ function saveState(type, t) {
 }
 
 function loadHistory(){
+  if (!profile) return;
   const today = new Date().toLocaleDateString('th-TH');
-  const state = JSON.parse(localStorage.getItem('attendance') || '{}');
 
-  // ถ้าไม่ใช่วันนี้ รีเซ็ตหมด
-  if (state.date !== today) {
-    localStorage.setItem('attendance', JSON.stringify({
-      date: today, checkin: null, checkout: null, records: []
-    }));
-    return;
-  }
+  // ใช้ JSONP — เพิ่ม script tag แทน fetch เพื่อหลีกเลี่ยง CORS
+  window._historyCallback = function(data) {
+    try {
+      const records = data.records || [];
+      if (records.length === 0) return;
 
-  const records = state.records || [];
-  if (records.length === 0) return;
+      const list = document.getElementById('history-list');
+      list.innerHTML = '';
+      records.forEach(r => {
+        const el = document.createElement('div'); el.className = 'history-item';
+        el.innerHTML = `<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
+          <div class="h-info"><div class="h-type">${r.type==='checkin'?'เข้างาน':'ออกงาน'}</div></div>
+          <div class="h-time">${r.time}</div>`;
+        list.appendChild(el);
+      });
 
-  // แสดงประวัติ
-  const list = document.getElementById('history-list');
-  list.innerHTML = '';
-  records.forEach(r => {
-    const el = document.createElement('div'); el.className = 'history-item';
-    el.innerHTML = `<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
-      <div class="h-info"><div class="h-type">${r.type==='checkin'?'เข้างาน':'ออกงาน'}</div></div>
-      <div class="h-time">${r.time}</div>`;
-    list.appendChild(el);
-  });
+      if (data.checkinTime)  document.getElementById('sum-in').textContent  = data.checkinTime;
+      if (data.checkoutTime) document.getElementById('sum-out').textContent = data.checkoutTime;
+      if (data.totalHours)   document.getElementById('sum-hrs').textContent = data.totalHours + ' ชม.';
 
-  // อัปเดต summary
-  if (state.checkin)  document.getElementById('sum-in').textContent  = state.checkin;
-  if (state.checkout) document.getElementById('sum-out').textContent = state.checkout;
-  if (state.checkin && state.checkout) {
-    const [h1,m1] = state.checkin.split(':').map(Number);
-    const [h2,m2] = state.checkout.split(':').map(Number);
-    const hrs = ((h2*60+m2 - h1*60-m1)/60).toFixed(1);
-    document.getElementById('sum-hrs').textContent = hrs + ' ชม.';
-  }
+      const last = records[records.length - 1];
+      checkedIn = last.type === 'checkin';
+      const badge = document.getElementById('status-badge');
+      if (checkedIn) {
+        badge.textContent = '✅ เข้างานแล้ว'; badge.className = 'status-badge in';
+      } else {
+        badge.textContent = '⏹ ออกงานแล้ว'; badge.className = 'status-badge out';
+      }
+      checkReady();
+    } catch(e) {}
+  };
 
-  // เช็คสถานะล่าสุด
-  const last = records[records.length - 1];
-  checkedIn = last.type === 'checkin';
-  const badge = document.getElementById('status-badge');
-  if (checkedIn) {
-    badge.textContent = '✅ เข้างานแล้ว'; badge.className = 'status-badge in';
-  } else {
-    badge.textContent = '⏹ ออกงานแล้ว'; badge.className = 'status-badge out';
-  }
-  checkReady();
+  const script = document.createElement('script');
+  script.src = GAS_URL + '?action=history&userId=' + encodeURIComponent(profile.userId) + '&callback=_historyCallback';
+  script.onerror = () => {};
+  document.head.appendChild(script);
 }
 
 function toast(msg){
