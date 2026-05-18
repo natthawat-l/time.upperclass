@@ -318,6 +318,8 @@ function dist(a,b,c,d){
 
 function checkReady(){
   const btn=document.getElementById('btn-main');
+  if(!btn) return;
+  btn.innerHTML=`<span id="btn-icon"></span><span id="btn-label"></span>`;
   const icon=document.getElementById('btn-icon');
   const label=document.getElementById('btn-label');
   if(hasPhoto&&hasLoc){
@@ -325,7 +327,9 @@ function checkReady(){
     if(checkedIn){btn.className='btn-main checkout';icon.textContent='🔴';label.textContent='ลงเวลาออกงาน';}
     else{btn.className='btn-main checkin';icon.textContent='🟢';label.textContent='ลงเวลาเข้างาน';}
   } else {
-    btn.disabled=true; icon.textContent='📷';
+    btn.disabled=true;
+    btn.className='btn-main checkin';
+    icon.textContent='📷';
     label.textContent=!hasPhoto?'ถ่ายรูปก่อนลงเวลา':'รอระบุตำแหน่ง...';
   }
 }
