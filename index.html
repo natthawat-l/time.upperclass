@@ -174,7 +174,7 @@
 <script>
 // ===== CONFIG =====
 const LIFF_ID = '2010117967-QjNoEycw';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyJtcI1smRBZ9dVh1GoZ58FQy4mDS2mfJQOMs4dvaMV48J-hjw5HxfVV2kaKvL4sYZCrw/exec'; // ← วาง Web App URL หลัง Deploy
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwi30r2Zhsd4CSWPXeOHIWUsCPxhmgHZMVkYZnvEAlb1sfsqqSDM3Q1krEMtuOAzGL3_Q/exec'; // ← วาง Web App URL หลัง Deploy
 
 const OFFICES = [
   { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702, lng:100.556688,  radius:200 },
@@ -345,7 +345,38 @@ async function submit(){
   };
 
   try {
-    await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload),mode:'no-cors'});
+    // ใช้ iframe trick เพื่อหลีกเลี่ยง CORS กับ Apps Script
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = GAS_URL;
+    form.target = 'hidden-iframe';
+    form.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+
+    let iframe = document.getElementById('hidden-iframe');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.name = 'hidden-iframe';
+      iframe.id = 'hidden-iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    document.body.appendChild(form);
+
+    await new Promise((resolve) => {
+      iframe.onload = resolve;
+      setTimeout(resolve, 5000); // timeout 5 วิ
+      form.submit();
+    });
+
+    form.remove();
+
     checkedIn=!checkedIn;
     const badge=document.getElementById('status-badge');
     const t=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
@@ -360,7 +391,7 @@ async function submit(){
     addHistory(type,lat,lng);
     retake();
   } catch(e){
-    toast('❌ ไม่สามารถเชื่อมต่อได้');
+    toast('❌ ไม่สามารถเชื่อมต่อได้: '+e.message);
   }
   checkReady();
 }
