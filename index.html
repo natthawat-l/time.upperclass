@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ระบบลงเวลางาน</title>
+<title>Timestamp_UpperClassSolution</title>
 
 <!-- OGP Meta Tags -->
-<meta property="og:title"       content="ระบบลงเวลางาน">
+<meta property="og:title"       content="ระบบลงเวลางาน Upper Class">
 <meta property="og:description" content="ลงเวลาเข้า-ออกงาน พร้อมถ่ายรูปและระบุตำแหน่ง">
-<meta property="og:image"       content="https://i.imgur.com/YOUR_IMAGE_ID.png">
-<meta property="og:url"         content="https://username.github.io/ชื่อ-repo/">
+<meta property="og:image"       content="https://drive.google.com/file/d/1Qm4PeZqOhH4hmP8inPx2FS4HJ9A0FS67/view?usp=drive_link">
+<meta property="og:url"         content="https://natthawat-l.github.io/time.upperclass/">
 <meta property="og:type"        content="website">
 
 <!-- LINE LIFF OGP -->
 <meta name="twitter:card"        content="summary_large_image">
 <meta name="twitter:title"       content="ระบบลงเวลางาน">
 <meta name="twitter:description" content="ลงเวลาเข้า-ออกงาน พร้อมถ่ายรูปและระบุตำแหน่ง">
-<meta name="twitter:image"       content="https://i.imgur.com/YOUR_IMAGE_ID.png">
+<meta name="twitter:image"       content="https://drive.google.com/file/d/1Qm4PeZqOhH4hmP8inPx2FS4HJ9A0FS67/view?usp=drive_link">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
@@ -189,10 +189,10 @@ const LIFF_ID = '2010117967-QjNoEycw';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbw-huXhWV6rmSlbCx7GQOW0T9MDW-yUea63A-Hnw9d5gNdzOTfV_2IfwiFevCa0H07Okw/exec';
 
 const OFFICES = [
-  { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702,          lng:100.556688,          radius:500 },
-  { id:'vana_wv17', name:'VANA WV17',      lat:13.8049706,          lng:100.4424956,         radius:500 },
-  { id:'cinquieme', name:'CINQUIEME KK10', lat:13.7597684,          lng:100.6694346,         radius:500 },
-  { id:'Armtest',   name:'Arm Test',       lat:13.818153933830375,  lng:100.33551262760439,  radius:500 },
+  { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702,         lng:100.556688,         radius:500 },
+  { id:'vana_wv17', name:'VANA WV17',      lat:13.8049706,         lng:100.4424956,        radius:500 },
+  { id:'cinquieme', name:'CINQUIEME KK10', lat:13.7597684,         lng:100.6694346,        radius:500 },
+  { id:'Armtest',   name:'Arm Test',       lat:13.818153933830375, lng:100.33551262760439, radius:500 },
 ];
 // ==================
 
@@ -362,7 +362,7 @@ async function submit(){
   };
 
   try {
-    const res = await fetch(GAS_URL, {
+    await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload),
@@ -401,11 +401,12 @@ function addHistory(type,la,lo){
   list.appendChild(el);
 }
 
+// ── State (Cookie) ────────────────────────────────────────────
+
 function saveState(type, time) {
   const today = new Date().toLocaleDateString('th-TH');
   const key   = 'att_' + (profile ? profile.userId.slice(-8) : 'x');
-
-  let state = readCookie(key);
+  let state   = readCookie(key);
   if (!state || state.date !== today) {
     state = { date: today, records: [] };
   }
@@ -417,7 +418,6 @@ function loadHistory() {
   if (!profile) return;
   const today = new Date().toLocaleDateString('th-TH');
   const key   = 'att_' + profile.userId.slice(-8);
-
   const state = readCookie(key);
   if (!state || state.date !== today || !state.records || state.records.length === 0) return;
 
@@ -426,52 +426,45 @@ function loadHistory() {
   list.innerHTML = '';
 
   let checkinTime = null, checkoutTime = null;
-
   records.forEach(r => {
     const el = document.createElement('div');
     el.className = 'history-item';
     el.innerHTML = `<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
-      <div class="h-info">
-        <div class="h-type">${r.type==='checkin'?'🟢 เข้างาน':'🔴 ออกงาน'}</div>
-      </div>
+      <div class="h-info"><div class="h-type">${r.type==='checkin'?'🟢 เข้างาน':'🔴 ออกงาน'}</div></div>
       <div class="h-time">${r.time}</div>`;
     list.appendChild(el);
-    if (r.type === 'checkin'  && !checkinTime)  checkinTime  = r.time;
-    if (r.type === 'checkout')                   checkoutTime = r.time;
+    if (r.type==='checkin'  && !checkinTime)  checkinTime  = r.time;
+    if (r.type==='checkout')                   checkoutTime = r.time;
   });
 
   if (checkinTime)  document.getElementById('sum-in').textContent  = checkinTime;
   if (checkoutTime) document.getElementById('sum-out').textContent = checkoutTime;
-
   if (checkinTime && checkoutTime) {
-    const [h1,m1] = checkinTime.split(':').map(Number);
-    const [h2,m2] = checkoutTime.split(':').map(Number);
-    const hrs = ((h2*60+m2 - h1*60-m1)/60).toFixed(1);
-    document.getElementById('sum-hrs').textContent = hrs + ' ชม.';
+    const [h1,m1]=checkinTime.split(':').map(Number);
+    const [h2,m2]=checkoutTime.split(':').map(Number);
+    document.getElementById('sum-hrs').textContent = ((h2*60+m2-h1*60-m1)/60).toFixed(1)+' ชม.';
   }
 
-  const last  = records[records.length - 1];
-  checkedIn   = last.type === 'checkin';
+  const last  = records[records.length-1];
+  checkedIn   = last.type==='checkin';
   const badge = document.getElementById('status-badge');
   if (checkedIn) {
-    badge.textContent = '✅ เข้างานแล้ว';
-    badge.className   = 'status-badge in';
+    badge.textContent='✅ เข้างานแล้ว'; badge.className='status-badge in';
   } else {
-    badge.textContent = '⏹ ออกงานแล้ว';
-    badge.className   = 'status-badge out';
+    badge.textContent='⏹ ออกงานแล้ว'; badge.className='status-badge out';
   }
   checkReady();
 }
 
 function writeCookie(name, obj, days) {
   const exp = new Date();
-  exp.setTime(exp.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = name + '=' + encodeURIComponent(JSON.stringify(obj))
-    + ';expires=' + exp.toUTCString() + ';path=/;SameSite=None;Secure';
+  exp.setTime(exp.getTime() + days*24*60*60*1000);
+  document.cookie = name+'='+encodeURIComponent(JSON.stringify(obj))
+    +';expires='+exp.toUTCString()+';path=/;SameSite=None;Secure';
 }
 
 function readCookie(name) {
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  const match = document.cookie.match(new RegExp('(^| )'+name+'=([^;]+)'));
   if (!match) return null;
   try { return JSON.parse(decodeURIComponent(match[2])); } catch(e) { return null; }
 }
