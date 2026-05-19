@@ -186,12 +186,12 @@
 <script>
 // ===== CONFIG =====
 const LIFF_ID = '2010117967-QjNoEycw';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw-huXhWV6rmSlbCx7GQOW0T9MDW-yUea63A-Hnw9d5gNdzOTfV_2IfwiFevCa0H07Okw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby_SlF7bWsXiN2zg6DGp_LyA6wGS-Z-VCZ3DEFQAN-X1T7J9aBBbIep9EJg7ncOsCB7qQ/exec';
 
 const OFFICES = [
-  { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702,          lng:100.556688,          radius:500 },
-  { id:'vana_wv17', name:'VANA WV17',      lat:13.8049706,          lng:100.4424956,         radius:500 },
-  { id:'cinquieme', name:'CINQUIEME KK10', lat:13.7597684,          lng:100.6694346,         radius:500 },
+  { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702,          lng:100.556688,          radius:200 },
+  { id:'vana_wv17', name:'VANA WV17',      lat:13.8049706,          lng:100.4424956,         radius:200 },
+  { id:'cinquieme', name:'CINQUIEME KK10', lat:13.7597684,          lng:100.6694346,         radius:200 },
   { id:'Armtest',   name:'Arm Test',       lat:13.818153933830375,  lng:100.33551262760439,  radius:500 },
 ];
 // ==================
@@ -380,6 +380,7 @@ async function submit(){
       document.getElementById('sum-out').textContent=t;
     }
     toast(type==='checkin'?'✅ ลงเวลาเข้างานสำเร็จ!':'✅ ลงเวลาออกงานสำเร็จ!');
+    saveState(type, t);
     addHistory(type,lat,lng);
     retake();
   } catch(e){
@@ -417,66 +418,79 @@ function saveState(type, t) {
   localStorage.setItem('attendance', JSON.stringify(s));
 }
 
-function loadHistory(){
+function saveState(type, time) {
+  const today = new Date().toLocaleDateString('th-TH');
+  const key   = 'att_' + (profile ? profile.userId.slice(-8) : 'x');
+
+  let state = readCookie(key);
+  if (!state || state.date !== today) {
+    state = { date: today, records: [] };
+  }
+  state.records.push({ type, time });
+  writeCookie(key, state, 1); // เก็บ 1 วัน
+}
+
+function loadHistory() {
   if (!profile) return;
+  const today = new Date().toLocaleDateString('th-TH');
+  const key   = 'att_' + profile.userId.slice(-8);
 
-  // ใช้ script tag แบบ timeout ป้องกัน hang
-  const callbackName = '_cb_' + Date.now();
-  let done = false;
+  const state = readCookie(key);
+  if (!state || state.date !== today || !state.records || state.records.length === 0) return;
 
-  window[callbackName] = function(data) {
-    done = true;
-    try {
-      delete window[callbackName];
-      const records = data.records || [];
-      if (records.length === 0) return;
+  const records = state.records;
+  const list    = document.getElementById('history-list');
+  list.innerHTML = '';
 
-      const list = document.getElementById('history-list');
-      list.innerHTML = '';
-      records.forEach(r => {
-        const el = document.createElement('div');
-        el.className = 'history-item';
-        el.innerHTML = `<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
-          <div class="h-info">
-            <div class="h-type">${r.type==='checkin'?'🟢 เข้างาน':'🔴 ออกงาน'}</div>
-          </div>
-          <div class="h-time">${r.time}</div>`;
-        list.appendChild(el);
-      });
+  let checkinTime = null, checkoutTime = null;
 
-      if (data.checkinTime)  document.getElementById('sum-in').textContent  = data.checkinTime;
-      if (data.checkoutTime) document.getElementById('sum-out').textContent = data.checkoutTime;
-      if (data.totalHours)   document.getElementById('sum-hrs').textContent = data.totalHours + ' ชม.';
+  records.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'history-item';
+    el.innerHTML = `<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
+      <div class="h-info">
+        <div class="h-type">${r.type==='checkin'?'🟢 เข้างาน':'🔴 ออกงาน'}</div>
+      </div>
+      <div class="h-time">${r.time}</div>`;
+    list.appendChild(el);
+    if (r.type === 'checkin'  && !checkinTime)  checkinTime  = r.time;
+    if (r.type === 'checkout')                   checkoutTime = r.time;
+  });
 
-      const last  = records[records.length - 1];
-      checkedIn   = last.type === 'checkin';
-      const badge = document.getElementById('status-badge');
-      if (checkedIn) {
-        badge.textContent = '✅ เข้างานแล้ว';
-        badge.className   = 'status-badge in';
-      } else {
-        badge.textContent = '⏹ ออกงานแล้ว';
-        badge.className   = 'status-badge out';
-      }
-      checkReady();
-    } catch(e) {}
-  };
+  if (checkinTime)  document.getElementById('sum-in').textContent  = checkinTime;
+  if (checkoutTime) document.getElementById('sum-out').textContent = checkoutTime;
 
-  const script = document.createElement('script');
-  script.src = GAS_URL
-    + '?action=history'
-    + '&userId=' + encodeURIComponent(profile.userId)
-    + '&callback=' + callbackName
-    + '&t=' + Date.now(); // ป้องกัน cache
-  script.onerror = () => { done = true; };
-  document.head.appendChild(script);
+  if (checkinTime && checkoutTime) {
+    const [h1,m1] = checkinTime.split(':').map(Number);
+    const [h2,m2] = checkoutTime.split(':').map(Number);
+    const hrs = ((h2*60+m2 - h1*60-m1)/60).toFixed(1);
+    document.getElementById('sum-hrs').textContent = hrs + ' ชม.';
+  }
 
-  // timeout 10 วิ
-  setTimeout(() => {
-    if (!done) {
-      try { delete window[callbackName]; } catch(e) {}
-    }
-  }, 10000);
+  const last  = records[records.length - 1];
+  checkedIn   = last.type === 'checkin';
+  const badge = document.getElementById('status-badge');
+  if (checkedIn) {
+    badge.textContent = '✅ เข้างานแล้ว';
+    badge.className   = 'status-badge in';
+  } else {
+    badge.textContent = '⏹ ออกงานแล้ว';
+    badge.className   = 'status-badge out';
+  }
+  checkReady();
+}
+
+function writeCookie(name, obj, days) {
+  const exp = new Date();
+  exp.setTime(exp.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = name + '=' + encodeURIComponent(JSON.stringify(obj))
+    + ';expires=' + exp.toUTCString() + ';path=/;SameSite=None;Secure';
+}
+
+function readCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  if (!match) return null;
+  try { return JSON.parse(decodeURIComponent(match[2])); } catch(e) { return null; }
 }
 
 function toast(msg){
