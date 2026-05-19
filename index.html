@@ -401,23 +401,6 @@ function addHistory(type,la,lo){
   list.appendChild(el);
 }
 
-function saveState(type, t) {
-  const today = new Date().toLocaleDateString('th-TH');
-  const state = JSON.parse(localStorage.getItem('attendance') || '{}');
-  if (state.date !== today) {
-    // วันใหม่ รีเซ็ต
-    localStorage.setItem('attendance', JSON.stringify({
-      date: today, checkin: null, checkout: null, records: []
-    }));
-  }
-  const s = JSON.parse(localStorage.getItem('attendance'));
-  if (type === 'checkin' && !s.checkin) s.checkin = t;
-  if (type === 'checkout') s.checkout = t;
-  s.records = s.records || [];
-  s.records.push({ type, time: t });
-  localStorage.setItem('attendance', JSON.stringify(s));
-}
-
 function saveState(type, time) {
   const today = new Date().toLocaleDateString('th-TH');
   const key   = 'att_' + (profile ? profile.userId.slice(-8) : 'x');
@@ -427,7 +410,7 @@ function saveState(type, time) {
     state = { date: today, records: [] };
   }
   state.records.push({ type, time });
-  writeCookie(key, state, 1); // เก็บ 1 วัน
+  writeCookie(key, state, 1);
 }
 
 function loadHistory() {
