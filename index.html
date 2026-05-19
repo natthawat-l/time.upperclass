@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Timestamp_UpperClassSolution</title>
+<title>ระบบลงเวลางาน</title>
 
 <!-- OGP Meta Tags -->
-<meta property="og:title"       content="ระบบลงเวลางาน Upper Class Solution">
+<meta property="og:title"       content="ระบบลงเวลางาน">
 <meta property="og:description" content="ลงเวลาเข้า-ออกงาน พร้อมถ่ายรูปและระบุตำแหน่ง">
-<meta property="og:image"       content="https://drive.google.com/file/d/1Qm4PeZqOhH4hmP8inPx2FS4HJ9A0FS67/view?usp=sharing">
-<meta property="og:url"         content="https://natthawat-l.github.io/time.upperclass/">
+<meta property="og:image"       content="https://i.imgur.com/YOUR_IMAGE_ID.png">
+<meta property="og:url"         content="https://username.github.io/ชื่อ-repo/">
 <meta property="og:type"        content="website">
 
 <!-- LINE LIFF OGP -->
 <meta name="twitter:card"        content="summary_large_image">
 <meta name="twitter:title"       content="ระบบลงเวลางาน">
 <meta name="twitter:description" content="ลงเวลาเข้า-ออกงาน พร้อมถ่ายรูปและระบุตำแหน่ง">
-<meta name="twitter:image"       content="https://drive.google.com/file/d/1Qm4PeZqOhH4hmP8inPx2FS4HJ9A0FS67/view?usp=sharing">
+<meta name="twitter:image"       content="https://i.imgur.com/YOUR_IMAGE_ID.png">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
@@ -186,12 +186,12 @@
 <script>
 // ===== CONFIG =====
 const LIFF_ID = '2010117967-QjNoEycw';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyqluU7QXvZ69U_Fi60Ljd8zksZjSB_P0smmP5nUZRamwhWtln5iapVSwk1-pDPZn867g/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxLt9VFHfSNtkqGeZ0OxzeT97hmjgwURMRFC2zWMkRWkYi_sggfdN2bWdp41zbCTnbuVQ/exec';
 
 const OFFICES = [
-  { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702,          lng:100.556688,          radius:500 },
-  { id:'vana_wv17', name:'VANA WV17',      lat:13.8049706,          lng:100.4424956,         radius:500 },
-  { id:'cinquieme', name:'CINQUIEME KK10', lat:13.7597684,          lng:100.6694346,         radius:500 },
+  { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702,          lng:100.556688,          radius:200 },
+  { id:'vana_wv17', name:'VANA WV17',      lat:13.8049706,          lng:100.4424956,         radius:200 },
+  { id:'cinquieme', name:'CINQUIEME KK10', lat:13.7597684,          lng:100.6694346,         radius:200 },
   { id:'Armtest',   name:'Arm Test',       lat:13.818153933830375,  lng:100.33551262760439,  radius:500 },
 ];
 // ==================
@@ -419,20 +419,27 @@ function saveState(type, t) {
 
 function loadHistory(){
   if (!profile) return;
-  const today = new Date().toLocaleDateString('th-TH');
 
-  // ใช้ JSONP — เพิ่ม script tag แทน fetch เพื่อหลีกเลี่ยง CORS
-  window._historyCallback = function(data) {
+  // ใช้ script tag แบบ timeout ป้องกัน hang
+  const callbackName = '_cb_' + Date.now();
+  let done = false;
+
+  window[callbackName] = function(data) {
+    done = true;
     try {
+      delete window[callbackName];
       const records = data.records || [];
       if (records.length === 0) return;
 
       const list = document.getElementById('history-list');
       list.innerHTML = '';
       records.forEach(r => {
-        const el = document.createElement('div'); el.className = 'history-item';
+        const el = document.createElement('div');
+        el.className = 'history-item';
         el.innerHTML = `<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
-          <div class="h-info"><div class="h-type">${r.type==='checkin'?'เข้างาน':'ออกงาน'}</div></div>
+          <div class="h-info">
+            <div class="h-type">${r.type==='checkin'?'🟢 เข้างาน':'🔴 ออกงาน'}</div>
+          </div>
           <div class="h-time">${r.time}</div>`;
         list.appendChild(el);
       });
@@ -441,22 +448,35 @@ function loadHistory(){
       if (data.checkoutTime) document.getElementById('sum-out').textContent = data.checkoutTime;
       if (data.totalHours)   document.getElementById('sum-hrs').textContent = data.totalHours + ' ชม.';
 
-      const last = records[records.length - 1];
-      checkedIn = last.type === 'checkin';
+      const last  = records[records.length - 1];
+      checkedIn   = last.type === 'checkin';
       const badge = document.getElementById('status-badge');
       if (checkedIn) {
-        badge.textContent = '✅ เข้างานแล้ว'; badge.className = 'status-badge in';
+        badge.textContent = '✅ เข้างานแล้ว';
+        badge.className   = 'status-badge in';
       } else {
-        badge.textContent = '⏹ ออกงานแล้ว'; badge.className = 'status-badge out';
+        badge.textContent = '⏹ ออกงานแล้ว';
+        badge.className   = 'status-badge out';
       }
       checkReady();
     } catch(e) {}
   };
 
   const script = document.createElement('script');
-  script.src = GAS_URL + '?action=history&userId=' + encodeURIComponent(profile.userId) + '&callback=_historyCallback';
-  script.onerror = () => {};
+  script.src = GAS_URL
+    + '?action=history'
+    + '&userId=' + encodeURIComponent(profile.userId)
+    + '&callback=' + callbackName
+    + '&t=' + Date.now(); // ป้องกัน cache
+  script.onerror = () => { done = true; };
   document.head.appendChild(script);
+
+  // timeout 10 วิ
+  setTimeout(() => {
+    if (!done) {
+      try { delete window[callbackName]; } catch(e) {}
+    }
+  }, 10000);
 }
 
 function toast(msg){
