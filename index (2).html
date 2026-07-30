@@ -2,411 +2,267 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ลงเวลางาน</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ลงเวลาทำงาน</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
   :root {
-    --green:#06C755; --green-dark:#04A344; --green-light:#E8FAF0;
-    --red:#FF5252; --red-light:#FFF0F0;
-    --gray-50:#F8F9FA; --gray-100:#F1F3F5; --gray-200:#E9ECEF;
-    --gray-400:#ADB5BD; --gray-600:#6C757D; --gray-800:#343A40; --gray-900:#212529;
-    --radius:16px; --radius-sm:10px; --shadow:0 4px 24px rgba(0,0,0,0.08);
+    --navy:#16324f; --teal:#0e7c66; --amber:#c2571a;
+    --bg:#f2f4f6; --card:#ffffff; --line:#dde3e8; --ink:#1c2b36; --mut:#68798a;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Sarabun',sans-serif;background:var(--gray-50);color:var(--gray-900);min-height:100vh;padding-bottom:40px}
-
-  .header{background:white;padding:20px 20px 16px;border-bottom:1px solid var(--gray-200);position:sticky;top:0;z-index:10}
-  .header-top{display:flex;align-items:center;gap:12px;margin-bottom:4px}
-  .logo{width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .header h1{font-size:18px;font-weight:700}
-  .header .date{font-size:13px;color:var(--gray-600);margin-top:2px}
-
-  .profile-card{background:white;margin:16px;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}
-  .avatar{width:52px;height:52px;border-radius:50%;background:var(--green-light);border:2px solid var(--green);overflow:hidden;flex-shrink:0}
-  .avatar img{width:100%;height:100%;object-fit:cover}
-  .avatar-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--green)}
-  .profile-info h2{font-size:16px;font-weight:600}
-  .profile-info p{font-size:13px;color:var(--gray-600);margin-top:2px}
-  .status-badge{margin-left:auto;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;flex-shrink:0}
-  .status-badge.out{background:var(--gray-100);color:var(--gray-600)}
-  .status-badge.in{background:var(--green-light);color:var(--green-dark)}
-
-  .summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 16px 16px}
-  .summary-card{background:white;border-radius:var(--radius-sm);padding:14px 10px;text-align:center;box-shadow:var(--shadow)}
-  .summary-card .label{font-size:11px;color:var(--gray-600);margin-bottom:4px}
-  .summary-card .value{font-size:17px;font-weight:700}
-  .summary-card .value.green{color:var(--green-dark)}
-  .summary-card .value.red{color:var(--red)}
-
-  .section{background:white;margin:0 16px 16px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
-  .section-header{padding:14px 16px;border-bottom:1px solid var(--gray-100);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
-
-  .camera-area{position:relative;background:var(--gray-900);aspect-ratio:4/3;overflow:hidden}
-  #video{width:100%;height:100%;object-fit:cover;display:block}
-  #preview-img{width:100%;height:100%;object-fit:cover;display:none;position:absolute;top:0;left:0}
-  .camera-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:white;background:rgba(0,0,0,0.3);transition:opacity 0.3s}
-  .camera-overlay.hidden{opacity:0;pointer-events:none}
-  .camera-overlay .big{font-size:40px}
-  .camera-overlay p{font-size:14px;opacity:0.9}
-
-  .camera-controls{padding:16px;display:flex;align-items:center;justify-content:center;gap:20px}
-  .btn-shutter{width:64px;height:64px;border-radius:50%;border:3px solid var(--green);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 2px 12px rgba(6,199,85,0.3);transition:all 0.15s}
-  .btn-shutter:active{transform:scale(0.93)}
-  .btn-retake{padding:8px 18px;border-radius:20px;border:1px solid var(--gray-200);background:white;color:var(--gray-800);font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;display:none}
-
-  .location-row{padding:14px 16px;display:flex;align-items:center;gap:12px}
-  .loc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-  .loc-icon.loading{background:var(--gray-100)}
-  .loc-icon.success{background:var(--green-light)}
-  .loc-icon.error{background:var(--red-light)}
-  .loc-text{flex:1}
-  .loc-text .loc-title{font-size:14px;font-weight:500}
-  .loc-text .loc-detail{font-size:12px;color:var(--gray-600);margin-top:2px}
-  .btn-refresh{padding:6px 12px;border-radius:20px;border:1px solid var(--gray-200);background:white;font-size:12px;font-family:'Sarabun',sans-serif;cursor:pointer;color:var(--gray-600)}
-
-  .geo-alert{margin:0 16px 16px;padding:12px 14px;border-radius:var(--radius-sm);font-size:13px;display:none;gap:8px;line-height:1.6}
-  .geo-alert.outside{background:var(--red-light);color:#C62828;border:1px solid #FFCDD2;display:block}
-  .geo-alert.inside{background:var(--green-light);color:var(--green-dark);border:1px solid #C8E6C9;display:block}
-
-  .action-area{padding:0 16px}
-  .btn-main{width:100%;padding:17px;border-radius:var(--radius);border:none;font-size:17px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
-  .btn-main.checkin{background:var(--green);color:white;box-shadow:0 4px 20px rgba(6,199,85,0.35)}
-  .btn-main.checkout{background:var(--red);color:white;box-shadow:0 4px 20px rgba(255,82,82,0.35)}
-  .btn-main:disabled{background:var(--gray-200);color:var(--gray-400);box-shadow:none;cursor:not-allowed}
-  .btn-main:not(:disabled):active{transform:scale(0.98)}
-
-  .spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-
-  .history-list{padding:0 4px}
-  .history-item{padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--gray-100)}
-  .history-item:last-child{border-bottom:none}
-  .h-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-  .h-dot.in{background:var(--green)}
-  .h-dot.out{background:var(--red)}
-  .h-info{flex:1}
-  .h-info .h-type{font-size:13px;font-weight:600}
-  .h-info .h-loc{font-size:12px;color:var(--gray-600)}
-  .h-time{font-size:14px;font-weight:600;color:var(--gray-800)}
-
-  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--gray-900);color:white;padding:12px 20px;border-radius:30px;font-size:14px;font-weight:500;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;z-index:999}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  canvas{display:none}
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:'IBM Plex Sans Thai',sans-serif; background:var(--bg); color:var(--ink); padding:16px; max-width:480px; margin:0 auto; }
+  h1 { font-size:1.15rem; color:var(--navy); margin-bottom:2px; }
+  .sub { font-size:.8rem; color:var(--mut); margin-bottom:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:12px; }
+  .step-tag { font-size:.7rem; font-weight:700; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; margin-bottom:8px; }
+  .toggle { display:flex; gap:8px; }
+  .toggle button { flex:1; padding:12px; border-radius:10px; border:1.5px solid var(--line); background:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  .toggle button.active-in  { background:var(--teal);  border-color:var(--teal);  color:#fff; }
+  .toggle button.active-out { background:var(--amber); border-color:var(--amber); color:#fff; }
+  .ok   { color:var(--teal); font-weight:600; font-size:.9rem; }
+  .wait { color:var(--mut); font-size:.9rem; }
+  .err  { color:#b3261e; font-weight:600; font-size:.85rem; white-space:pre-line; }
+  .btn { width:100%; padding:14px; border:0; border-radius:10px; background:var(--navy); color:#fff; font:inherit; font-size:1rem; font-weight:700; cursor:pointer; }
+  .btn:disabled { background:#aab6c0; }
+  .btn.sm { background:#fff; color:var(--navy); border:1.5px solid var(--navy); font-size:.9rem; padding:10px; }
+  #photoPreview { width:100%; border-radius:10px; margin-top:8px; display:none; }
+  #result { text-align:center; padding:8px; font-weight:600; white-space:pre-line; }
+  input[type=file] { display:none; }
+  #debugBox { margin-top:14px; padding:10px; border-radius:8px; background:#fff8e6; border:1px dashed #d8b64a;
+    font-size:.7rem; color:#6b5a1e; white-space:pre-wrap; word-break:break-all; display:none; }
 </style>
 </head>
 <body>
+  <h1>ลงเวลาทำงาน <span style="font-size:.65rem;color:#0e7c66;font-weight:700">(ทดสอบ: Cloudflare Pages)</span></h1>
+  <div class="sub" id="empName">บริษัท อัพเพอร์ คลาส โซลูชัน จำกัด · กำลังเชื่อมต่อ LINE...</div>
 
-<div class="header">
-  <div class="header-top">
-    <div class="logo">🕐</div>
-    <div><h1>ระบบลงเวลางาน</h1></div>
-  </div>
-  <div class="date" id="clock">กำลังโหลด...</div>
-</div>
-
-<div class="profile-card">
-  <div class="avatar">
-    <div class="avatar-placeholder" id="av-placeholder">👤</div>
-    <img id="av-img" src="" alt="" style="display:none">
-  </div>
-  <div class="profile-info">
-    <h2 id="user-name">กำลังโหลด...</h2>
-    <p id="user-sub">LINE ID: -</p>
-  </div>
-  <span class="status-badge out" id="status-badge">ยังไม่ลงเวลา</span>
-</div>
-
-<div class="summary">
-  <div class="summary-card"><div class="label">เข้างาน</div><div class="value green" id="sum-in">-</div></div>
-  <div class="summary-card"><div class="label">ออกงาน</div><div class="value red" id="sum-out">-</div></div>
-  <div class="summary-card"><div class="label">ชั่วโมง</div><div class="value" id="sum-hrs">-</div></div>
-</div>
-
-<div class="section">
-  <div class="section-header">📷 ถ่ายรูปยืนยันตัวตน</div>
-  <div class="camera-area">
-    <video id="video" autoplay playsinline muted></video>
-    <img id="preview-img" alt="preview">
-    <div class="camera-overlay" id="cam-overlay">
-      <div class="big">📷</div>
-      <p>กดปุ่มด้านล่างเพื่อถ่ายรูป</p>
+  <div class="card">
+    <div class="step-tag">1 · ประเภทการลงเวลา</div>
+    <div class="toggle">
+      <button type="button" id="btnIn"  class="active-in" onclick="setType('เข้างาน')">🟢 เข้างาน</button>
+      <button type="button" id="btnOut" onclick="setType('ออกงาน')">🔴 ออกงาน</button>
     </div>
   </div>
-  <div class="camera-controls">
-    <button class="btn-retake" id="btn-retake" onclick="retake()">🔄 ถ่ายใหม่</button>
-    <button class="btn-shutter" id="btn-shutter" onclick="capture()">📷</button>
+
+  <div class="card">
+    <div class="step-tag">2 · สแกน QR ประจำโครงการ</div>
+    <button type="button" class="btn sm" id="scanBtn" onclick="scanQr()">📷 แตะเพื่อสแกน QR Code</button>
+    <p id="qrStatus" class="wait" style="margin-top:8px">ยังไม่ได้สแกน</p>
   </div>
-  <canvas id="canvas"></canvas>
-</div>
 
-<div class="section">
-  <div class="section-header">📍 ตำแหน่งปัจจุบัน</div>
-  <div class="location-row">
-    <div class="loc-icon loading" id="loc-icon">⏳</div>
-    <div class="loc-text">
-      <div class="loc-title" id="loc-title">กำลังระบุตำแหน่ง...</div>
-      <div class="loc-detail" id="loc-detail">กรุณารอสักครู่</div>
-    </div>
-    <button class="btn-refresh" onclick="getLocation()">🔄 รีเฟรช</button>
+  <div class="card">
+    <div class="step-tag">3 · ถ่ายรูปยืนยันตัวตน</div>
+    <button type="button" class="btn sm" onclick="document.getElementById('photoInput').click()">📷 ถ่ายรูป (กล้องหน้า)</button>
+    <input type="file" id="photoInput" accept="image/*" capture="user" onchange="onPhoto(this)">
+    <img id="photoPreview" alt="ตัวอย่างรูป">
+    <p id="photoStatus" class="wait">ยังไม่ได้ถ่ายรูป</p>
   </div>
-</div>
 
-<div class="geo-alert" id="geo-alert"></div>
-
-<div class="action-area">
-  <button class="btn-main checkin" id="btn-main" onclick="submit()" disabled>
-    <span id="btn-icon">📷</span>
-    <span id="btn-label">ถ่ายรูปและระบุตำแหน่งก่อน</span>
-  </button>
-</div>
-
-<div class="section" style="margin-top:16px">
-  <div class="section-header">📋 ประวัติวันนี้</div>
-  <div class="history-list" id="history-list">
-    <div class="history-item"><div style="color:var(--gray-400);font-size:13px">ยังไม่มีประวัติวันนี้</div></div>
+  <div class="card">
+    <div class="step-tag">4 · ตำแหน่งปัจจุบัน</div>
+    <p id="gpsStatus" class="wait">กำลังขอพิกัด GPS...</p>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <button type="button" class="btn" id="submitBtn" onclick="submitCheckinForm()" disabled>บันทึกเวลา</button>
+  <div id="result"></div>
+  <div id="debugBox"></div>
 
 <script>
-// ===== CONFIG =====
-const LIFF_ID = '2010813974-7hkwkaGj';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyJtcI1smRBZ9dVh1GoZ58FQy4mDS2mfJQOMs4dvaMV48J-hjw5HxfVV2kaKvL4sYZCrw/exec'; // ← วาง Web App URL หลัง Deploy
+  // ============================================================
+  // 🔧 ตั้งค่า 2 ค่านี้ก่อนใช้งานจริง
+  // ============================================================
+  const LIFF_ID = '2010813974-7hkwkaGj';              // เอามาจาก LINE Developers Console แท็บ LIFF
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdze7qBvp2WECwLoz9n6kGbz5GkKiL_Zmbag6tzT51O7vYerPQFLUltIcC3aqNlbTt/exec'; // Web app URL ของ Apps Script (ลงท้าย /exec)
+  // ============================================================
 
-const OFFICES = [
-  { id:'s_oasis',   name:'S-OASIS',        lat:13.8074702, lng:100.556688,  radius:200 },
-  { id:'vana_wv17', name:'VANA WV17',      lat:13.8049706, lng:100.4424956, radius:200 },
-  { id:'cinquieme', name:'CINQUIEME KK10', lat:13.7597684, lng:100.6694346, radius:200 },
-];
-// ==================
+  const state = { type:'เข้างาน', qr:null, photo:null, lat:null, lng:null, userId:null, busy:false };
 
-let profile=null, lat=null, lng=null, photo=null;
-let hasPhoto=false, hasLoc=false, checkedIn=false, stream=null, nearest=null;
-
-async function init() {
-  tick(); setInterval(tick,1000);
-  await initLiff();
-  startCamera();
-  getLocation();
-}
-
-function tick() {
-  const n=new Date();
-  const days=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
-  const months=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  document.getElementById('clock').textContent=
-    `วัน${days[n.getDay()]}ที่ ${n.getDate()} ${months[n.getMonth()]} ${n.getFullYear()+543} เวลา ${n.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} น.`;
-}
-
-async function initLiff() {
-  try {
-    await liff.init({liffId:LIFF_ID});
-    if (!liff.isLoggedIn()){liff.login();return;}
-    profile = await liff.getProfile();
-    document.getElementById('user-name').textContent = profile.displayName;
-    document.getElementById('user-sub').textContent  = 'LINE: '+profile.userId.slice(0,12)+'...';
-    if (profile.pictureUrl) {
-      document.getElementById('av-img').src=profile.pictureUrl;
-      document.getElementById('av-img').style.display='block';
-      document.getElementById('av-placeholder').style.display='none';
-    }
-    loadHistory();
-  } catch(e) {
-    profile={displayName:'ทดสอบ',userId:'dev-'+Date.now()};
-    document.getElementById('user-name').textContent='ทดสอบระบบ';
-    document.getElementById('user-sub').textContent='dev-mode';
-  }
-}
-
-async function startCamera() {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
-    const v=document.getElementById('video');
-    v.srcObject=stream;
-    v.onloadedmetadata=()=>document.getElementById('cam-overlay').classList.add('hidden');
-  } catch(e) {
-    document.getElementById('cam-overlay').innerHTML='<div class="big">❌</div><p>กรุณาอนุญาตการใช้กล้อง</p>';
-  }
-}
-
-function capture() {
-  const v=document.getElementById('video'), c=document.getElementById('canvas');
-  c.width=v.videoWidth||640; c.height=v.videoHeight||480;
-  const ctx=c.getContext('2d');
-  ctx.drawImage(v,0,0);
-  const now=new Date();
-  ctx.fillStyle='rgba(0,0,0,0.55)';
-  ctx.fillRect(0,c.height-32,c.width,32);
-  ctx.fillStyle='white'; ctx.font='bold 13px Sarabun,sans-serif';
-  ctx.fillText(now.toLocaleString('th-TH'),10,c.height-10);
-  photo=c.toDataURL('image/jpeg',0.75).split(',')[1];
-  const p=document.getElementById('preview-img');
-  p.src=c.toDataURL('image/jpeg',0.75); p.style.display='block';
-  document.getElementById('cam-overlay').classList.add('hidden');
-  document.getElementById('btn-retake').style.display='block';
-  document.getElementById('btn-shutter').style.display='none';
-  if(stream) stream.getTracks().forEach(t=>t.stop());
-  hasPhoto=true; checkReady(); toast('✅ ถ่ายรูปเรียบร้อย');
-}
-
-function retake() {
-  document.getElementById('preview-img').style.display='none';
-  document.getElementById('btn-retake').style.display='none';
-  document.getElementById('btn-shutter').style.display='block';
-  hasPhoto=false; photo=null; startCamera(); checkReady();
-}
-
-function getLocation() {
-  const icon=document.getElementById('loc-icon');
-  const title=document.getElementById('loc-title');
-  const detail=document.getElementById('loc-detail');
-  icon.className='loc-icon loading'; icon.textContent='⏳';
-  title.textContent='กำลังระบุตำแหน่ง...'; detail.textContent='กรุณารอสักครู่';
-  hasLoc=false; checkReady();
-
-  if (!navigator.geolocation) {
-    icon.className='loc-icon error'; icon.textContent='❌';
-    title.textContent='ไม่รองรับ GPS'; return;
+  function debugLog(msg) {
+    const box = document.getElementById('debugBox');
+    box.style.display = 'block';
+    const time = new Date().toLocaleTimeString('th-TH', { hour12:false });
+    box.textContent += `[${time}] ${msg}\n`;
   }
 
-  navigator.geolocation.getCurrentPosition(pos=>{
-    lat=pos.coords.latitude; lng=pos.coords.longitude;
-    const acc=Math.round(pos.coords.accuracy);
-
-    let close=null, closeDist=Infinity;
-    for (const o of OFFICES) {
-      const d=dist(lat,lng,o.lat,o.lng);
-      if(d<closeDist){closeDist=d;close=o;}
-    }
-    nearest=close;
-    const inSite=closeDist<=close.radius;
-
-    icon.className='loc-icon success'; icon.textContent='📍';
-    title.textContent=close.name+(inSite?' ✅':' ⚠️');
-    detail.textContent=`ห่าง ${Math.round(closeDist)} ม. | ความแม่น ±${acc} ม.`;
-
-    const al=document.getElementById('geo-alert');
-    if(inSite){
-      al.className='geo-alert inside';
-      al.innerHTML=`✅ อยู่ในบริเวณ <strong>${close.name}</strong> (ห่าง ${Math.round(closeDist)} ม.)`;
-    } else {
-      const rows=OFFICES.map(o=>{
-        const d=Math.round(dist(lat,lng,o.lat,o.lng));
-        return `${d<=o.radius?'✅':'📍'} ${o.name}: ${d} ม.`;
-      }).join('<br>');
-      al.className='geo-alert outside';
-      al.innerHTML=`⚠️ อยู่นอกบริเวณสาขาทั้งหมด<br><small>${rows}</small>`;
-    }
-    hasLoc=true; checkReady();
-  }, err=>{
-    icon.className='loc-icon error'; icon.textContent='❌';
-    title.textContent='ไม่สามารถระบุตำแหน่งได้';
-    detail.textContent='กรุณาอนุญาตการใช้ตำแหน่งแล้วกด รีเฟรช';
-    document.getElementById('geo-alert').className='geo-alert';
-  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
-}
-
-function dist(a,b,c,d){
-  const R=6371000,dA=(c-a)*Math.PI/180,dB=(d-b)*Math.PI/180;
-  const x=Math.sin(dA/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dB/2)**2;
-  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
-}
-
-function checkReady(){
-  const btn=document.getElementById('btn-main');
-  const icon=document.getElementById('btn-icon');
-  const label=document.getElementById('btn-label');
-  if(hasPhoto&&hasLoc){
-    btn.disabled=false;
-    if(checkedIn){btn.className='btn-main checkout';icon.textContent='🔴';label.textContent='ลงเวลาออกงาน';}
-    else{btn.className='btn-main checkin';icon.textContent='🟢';label.textContent='ลงเวลาเข้างาน';}
-  } else {
-    btn.disabled=true; icon.textContent='📷';
-    label.textContent=!hasPhoto?'ถ่ายรูปก่อนลงเวลา':'รอระบุตำแหน่ง...';
+  function setType(t) {
+    state.type = t;
+    document.getElementById('btnIn').className  = t==='เข้างาน' ? 'active-in'  : '';
+    document.getElementById('btnOut').className = t==='ออกงาน' ? 'active-out' : '';
   }
-}
 
-async function submit(){
-  const btn=document.getElementById('btn-main');
-  btn.disabled=true;
-  btn.innerHTML='<div class="spinner"></div><span>กำลังบันทึก...</span>';
-
-  const type=checkedIn?'checkout':'checkin';
-  const payload={
-    type, userId:profile?.userId||'dev',
-    displayName:profile?.displayName||'ทดสอบ',
-    lat, lng, photoBase64:photo,
-    timestamp:new Date().toISOString(),
-    officeId:nearest?.id||'', officeName:nearest?.name||'',
-  };
-
-  try {
-    await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload),mode:'no-cors'});
-    checkedIn=!checkedIn;
-    const badge=document.getElementById('status-badge');
-    const t=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
-    if(checkedIn){
-      badge.textContent='✅ เข้างานแล้ว'; badge.className='status-badge in';
-      document.getElementById('sum-in').textContent=t;
-    } else {
-      badge.textContent='⏹ ออกงานแล้ว'; badge.className='status-badge out';
-      document.getElementById('sum-out').textContent=t;
-    }
-    toast(type==='checkin'?'✅ ลงเวลาเข้างานสำเร็จ!':'✅ ลงเวลาออกงานสำเร็จ!');
-    addHistory(type,lat,lng);
-    retake();
-  } catch(e){
-    toast('❌ ไม่สามารถเชื่อมต่อได้');
+  function refresh() {
+    document.getElementById('submitBtn').disabled =
+      !(state.qr && state.photo && state.userId) || state.busy;
   }
-  checkReady();
-}
 
-function addHistory(type,la,lo){
-  const list=document.getElementById('history-list');
-  if(list.querySelector('[style]'))list.innerHTML='';
-  const t=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
-  const el=document.createElement('div'); el.className='history-item';
-  el.innerHTML=`<div class="h-dot ${type==='checkin'?'in':'out'}"></div>
-    <div class="h-info"><div class="h-type">${type==='checkin'?'เข้างาน':'ออกงาน'}</div>
-    <div class="h-loc">📍 ${la.toFixed(5)}, ${lo.toFixed(5)}</div></div>
-    <div class="h-time">${t}</div>`;
-  list.appendChild(el);
-}
-
-async function loadHistory(){
-  try{
-    const res=await fetch(`${GAS_URL}?action=history&userId=${profile.userId}`);
-    const data=await res.json();
-    if(data.records&&data.records.length>0){
-      const list=document.getElementById('history-list'); list.innerHTML='';
-      data.records.forEach(r=>{
-        const el=document.createElement('div'); el.className='history-item';
-        el.innerHTML=`<div class="h-dot ${r.type==='checkin'?'in':'out'}"></div>
-          <div class="h-info"><div class="h-type">${r.type==='checkin'?'เข้างาน':'ออกงาน'}</div>
-          <div class="h-loc">📍 ${r.lat}, ${r.lng}</div></div>
-          <div class="h-time">${r.time}</div>`;
-        list.appendChild(el);
+  // ---- เรียก Apps Script แบบ API ผ่าน fetch() แทน google.script.run ----
+  // ใช้ Content-Type: text/plain เพื่อเลี่ยง CORS preflight (OPTIONS request)
+  // ซึ่ง Apps Script Web App ไม่รองรับ ถ้าส่ง Content-Type: application/json
+  // ตรงๆ เบราว์เซอร์จะส่ง preflight ก่อนแล้วเจอ error ทันที
+  async function callAppsScript(action, payload) {
+    debugLog('📡 fetch เริ่ม: action=' + action + ' → ' + APPS_SCRIPT_URL);
+    let res;
+    try {
+      res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, payload }),
+        redirect: 'follow',
       });
-      const last=data.records[data.records.length-1];
-      checkedIn=last.type==='checkin';
-      if(data.checkinTime) document.getElementById('sum-in').textContent=data.checkinTime;
-      if(data.checkoutTime) document.getElementById('sum-out').textContent=data.checkoutTime;
-      if(data.totalHours) document.getElementById('sum-hrs').textContent=data.totalHours+' ชม.';
-      checkReady();
+    } catch (networkErr) {
+      debugLog('❌ fetch throw (network/CORS ก่อนได้ response): ' + networkErr.message);
+      throw networkErr;
     }
-  }catch(e){}
-}
+    debugLog('📥 fetch ได้ response: status=' + res.status + ' type=' + res.type + ' ok=' + res.ok + ' redirected=' + res.redirected);
+    const proxyDebug = res.headers.get('X-Proxy-Debug');
+    if (proxyDebug) debugLog('🔍 Proxy debug: ' + proxyDebug);
+    if (res.type === 'opaque' || res.type === 'opaqueredirect') {
+      debugLog('⚠️ response type เป็น opaque — เบราว์เซอร์บล็อกไม่ให้อ่านเนื้อหา (CORS จริง)');
+      throw new Error('Response ถูกบล็อกด้วย CORS (opaque response) — อ่านเนื้อหาไม่ได้');
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    debugLog('📄 response text (' + text.length + ' ตัวอักษร): ' + text.slice(0, 200));
+    return JSON.parse(text);
+  }
 
-function toast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3000);
-}
+  // ---- LIFF init ----
+  const t0 = new Date().toLocaleTimeString('th-TH', { hour12:false });
+  debugLog('[' + t0 + '] เริ่มเรียก liff.init() (origin: ' + location.origin + ')');
 
-init();
+  let liffInitSettled = false;
+  setTimeout(() => {
+    if (!liffInitSettled) debugLog('⏰ TIMEOUT: liff.init() ไม่ resolve/reject ภายใน 8 วินาที');
+  }, 8000);
+
+  liff.init({ liffId: LIFF_ID }).then(async () => {
+    liffInitSettled = true;
+    debugLog('✅ liff.init สำเร็จ! isLoggedIn=' + liff.isLoggedIn() + ', isInClient=' + liff.isInClient());
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    const profile = await liff.getProfile();
+    state.userId = profile.userId;
+    document.getElementById('empName').textContent = 'สวัสดี ' + profile.displayName;
+    refresh();
+  }).catch(e => {
+    liffInitSettled = true;
+    document.getElementById('empName').textContent = 'เชื่อมต่อ LINE ไม่สำเร็จ: ' + e.message;
+    debugLog('❌ liff.init ล้มเหลว: ' + (e && e.message));
+  });
+
+  // ---- QR scanner ผ่าน LINE native scanner ----
+  function scanQr() {
+    const statusEl = document.getElementById('qrStatus');
+    statusEl.className = 'wait';
+    statusEl.textContent = '⏳ กำลังเรียกกล้อง...';
+    debugLog('กดปุ่มสแกน: isLoggedIn=' + liff.isLoggedIn() + ', isInClient=' + liff.isInClient());
+
+    if (typeof liff.scanCodeV2 !== 'function') {
+      statusEl.className = 'err';
+      statusEl.textContent = '⚠️ อุปกรณ์นี้ไม่รองรับการสแกน กรุณาเปิดผ่านแอป LINE บนมือถือ';
+      return;
+    }
+    if (!liff.isInClient()) {
+      statusEl.className = 'err';
+      statusEl.textContent = '⚠️ การสแกน QR ใช้ได้เฉพาะเมื่อเปิดจากภายในแอป LINE บนมือถือเท่านั้น';
+      return;
+    }
+    if (!liff.isLoggedIn()) {
+      statusEl.className = 'err';
+      statusEl.textContent = '⚠️ เซสชันหลุด กรุณาปิดหน้านี้แล้วเปิดใหม่';
+      return;
+    }
+    try {
+      liff.scanCodeV2().then((result) => {
+        debugLog('scanCodeV2 then: ' + JSON.stringify(result));
+        if (!result || !result.value) {
+          statusEl.className = 'wait';
+          statusEl.textContent = 'ไม่ได้สแกน หรือยกเลิกการสแกน';
+          return;
+        }
+        state.qr = result.value.trim();
+        statusEl.className = 'ok';
+        statusEl.textContent = '✅ สแกนสำเร็จ: ' + state.qr;
+        refresh();
+      }).catch((err) => {
+        const detail = (err && (err.message || err.code || JSON.stringify(err))) || 'ไม่ทราบสาเหตุ';
+        statusEl.className = 'err';
+        statusEl.textContent = '❌ สแกนไม่สำเร็จ: ' + detail;
+        debugLog('scanCodeV2 catch: ' + detail);
+      });
+    } catch (syncErr) {
+      statusEl.className = 'err';
+      statusEl.textContent = '❌ เรียกสแกนไม่สำเร็จ: ' + (syncErr && syncErr.message);
+    }
+  }
+
+  // ---- Photo → ย่อขนาด → base64 ----
+  function onPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 800, ratio = Math.min(1, MAX / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = img.width * ratio; c.height = img.height * ratio;
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      state.photo = c.toDataURL('image/jpeg', 0.75);
+      const pv = document.getElementById('photoPreview');
+      pv.src = state.photo; pv.style.display = 'block';
+      document.getElementById('photoStatus').className = 'ok';
+      document.getElementById('photoStatus').textContent = '✅ ถ่ายรูปเรียบร้อย';
+      refresh();
+    };
+    img.src = URL.createObjectURL(file);
+  }
+
+  // ---- GPS ----
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      state.lat = pos.coords.latitude.toFixed(6);
+      state.lng = pos.coords.longitude.toFixed(6);
+      const el = document.getElementById('gpsStatus');
+      el.className = 'ok';
+      el.textContent = '✅ ได้พิกัดแล้ว (' + state.lat + ', ' + state.lng + ')';
+    },
+    (err) => {
+      document.getElementById('gpsStatus').textContent = '⚠️ ไม่ได้รับพิกัด (' + err.message + ')';
+    },
+    { enableHighAccuracy:true, timeout:10000 }
+  );
+
+  // ---- Submit ----
+  async function submitCheckinForm() {
+    debugLog('▶️ กดปุ่มบันทึกเวลา');
+    state.busy = true; refresh();
+    const res = document.getElementById('result');
+    res.textContent = '⏳ กำลังบันทึก...'; res.style.color = 'var(--mut)';
+
+    let settled = false;
+    setTimeout(() => {
+      if (!settled) debugLog('⏰ TIMEOUT: submitCheckin ไม่ resolve/reject ภายใน 10 วินาที — fetch ค้างจริง');
+    }, 10000);
+
+    try {
+      const r = await callAppsScript('submitCheckin', {
+        lineUserId: state.userId, type: state.type, qrCode: state.qr,
+        lat: state.lat, lng: state.lng, photoBase64: state.photo,
+      });
+      settled = true;
+      state.busy = false;
+      res.textContent = r.msg;
+      res.style.color = r.ok ? 'var(--teal)' : 'var(--amber)';
+      if (r.ok) setTimeout(() => liff.closeWindow(), 2500);
+      else refresh();
+    } catch (e) {
+      settled = true;
+      state.busy = false; refresh();
+      res.textContent = '❌ เกิดข้อผิดพลาด: ' + e.message;
+      res.style.color = 'var(--amber)';
+      debugLog('❌ submitCheckin catch: ' + e.message);
+    }
+  }
 </script>
 </body>
 </html>
